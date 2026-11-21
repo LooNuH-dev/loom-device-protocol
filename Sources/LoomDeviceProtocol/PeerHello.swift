@@ -60,6 +60,8 @@ public struct PeerHello: Equatable, Sendable {
     /// Capability names as sent, unknown ones kept, so a later build's are
     /// not lost on the way through.
     public let capabilities: Set<String>
+    /// Which peers the sender serves (`serves`); nil: everyone.
+    public let serves: PeerFilter?
     /// Sixteen fresh bytes, from a build that speaks `auth1`.
     public let nonce: Data?
     /// The open-protocol versions the sender speaks (`versions`), as sent.
@@ -83,7 +85,8 @@ public struct PeerHello: Equatable, Sendable {
         versions: [Int] = DeviceProtocol.supportedVersions,
         nonce: Data? = nil,
         syncEpoch: String? = nil,
-        syncTracks: String? = nil
+        syncTracks: String? = nil,
+        serves: PeerFilter? = nil
     ) {
         self.protocolVersion = protocolVersion
         self.deviceID = deviceID
@@ -97,6 +100,12 @@ public struct PeerHello: Equatable, Sendable {
         self.nonce = nonce
         self.syncEpoch = syncEpoch
         self.syncTracks = syncTracks
+        self.serves = serves
+    }
+
+    /// Whether the sender serves a peer of `peerClass`. See PROTOCOL.md 1.4.
+    public func serves(_ peerClass: DeviceClass? = DeviceClass.this, sameHost: Bool = false) -> Bool {
+        serves?.admits(peerClass, sameHost: sameHost) ?? true
     }
 
     /// Whether both this build and the sender of this `hello` prove the
@@ -155,6 +164,7 @@ public struct PeerHello: Equatable, Sendable {
         nonce = payload["nonce"]?.stringValue.flatMap { Data(base64Encoded: $0) }
         syncEpoch = payload["syncEpoch"]?.stringValue.flatMap { $0.isEmpty ? nil : $0 }
         syncTracks = payload["syncTracks"]?.stringValue
+        serves = PeerFilter(wire: payload["serves"]?.stringValue)
         declaredVersions = DeviceProtocol.versions(in: payload[DeviceProtocol.helloKey])
     }
 
@@ -173,6 +183,7 @@ public struct PeerHello: Equatable, Sendable {
         // they read a missing port and a zero one alike.
         fields["dataPort"] = .int(Int64(dataPort ?? 0))
         if let deviceClass { fields["class"] = .string(deviceClass.rawValue) }
+        if let serves { fields["serves"] = .string(serves.wire) }
         if let nonce { fields["nonce"] = .string(nonce.base64EncodedString()) }
         if let syncEpoch { fields["syncEpoch"] = .string(syncEpoch) }
         if let syncTracks { fields["syncTracks"] = .string(syncTracks) }

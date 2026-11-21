@@ -57,4 +57,16 @@ final class HandoverTests: XCTestCase {
         var reader = MessageFraming.Reader()
         return try XCTUnwrap(reader.read(try MessageFraming.frame(message)).first)
     }
+
+    func testASuccessWithoutSizeOrDigestIsIgnored() throws {
+        let digest = Data(repeating: 1, count: 32)
+        for ready in [Handover.Ready(fetchID: "F1", fileID: "v-1", sha256: digest),
+                      Handover.Ready(fetchID: "F1", fileID: "v-1", bytes: 10),
+                      Handover.Ready(fetchID: "F1", fileID: "v-1", bytes: 10, sha256: Data(count: 8)),
+                      Handover.Ready(fetchID: "F1", fileID: "v-1", bytes: -1, sha256: digest)] {
+            XCTAssertNil(Handover.Ready(try roundTrip(ready.message())))
+        }
+        let failed = Handover.Ready(fetchID: "F1", fileID: nil, reason: "Gone")
+        XCTAssertNotNil(Handover.Ready(try roundTrip(failed.message())), "a failure needs neither")
+    }
 }

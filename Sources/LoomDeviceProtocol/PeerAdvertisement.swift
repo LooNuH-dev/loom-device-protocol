@@ -30,6 +30,8 @@ public struct PeerAdvertisement: Equatable, Sendable {
     /// What it can do for others (TXT `caps`), as sent, unknown names kept.
     /// Empty from a build before they were said, or one that offers nothing.
     public let capabilities: Set<String>
+    /// Which peers it serves (TXT `serves`); nil: everyone.
+    public let serves: PeerFilter?
 
     public init(
         protocolVersion: Int = WireProtocol.version,
@@ -40,7 +42,8 @@ public struct PeerAdvertisement: Equatable, Sendable {
         isPlaying: Bool,
         deviceClass: DeviceClass? = DeviceClass.this,
         versions: [Int] = DeviceProtocol.supportedVersions,
-        capabilities: Set<Capability> = []
+        capabilities: Set<Capability> = [],
+        serves: PeerFilter? = nil
     ) {
         self.protocolVersion = protocolVersion
         self.deviceName = deviceName
@@ -51,6 +54,7 @@ public struct PeerAdvertisement: Equatable, Sendable {
         self.deviceClass = deviceClass
         self.versions = versions
         self.capabilities = Set(capabilities.map(\.rawValue))
+        self.serves = serves
     }
 
     /// The Bonjour service type both ends look for.
@@ -69,6 +73,7 @@ public struct PeerAdvertisement: Equatable, Sendable {
         public static let deviceClass = "class"
         public static let versions = DeviceProtocol.txtKey
         public static let capabilities = "caps"
+        public static let serves = "serves"
     }
 
     /// The longest value a TXT key may carry: a TXT string is one length
@@ -89,6 +94,7 @@ public struct PeerAdvertisement: Equatable, Sendable {
         if let deviceClass { record[Key.deviceClass] = deviceClass.rawValue }
         if !versions.isEmpty { record[Key.versions] = DeviceProtocol.txt(versions) }
         if !capabilities.isEmpty { record[Key.capabilities] = capabilities.sorted().joined(separator: ",") }
+        if let serves { record[Key.serves] = serves.wire }
         return record
     }
 
@@ -135,6 +141,13 @@ public struct PeerAdvertisement: Equatable, Sendable {
             (txtRecord[Key.capabilities] ?? "").split(separator: ",").prefix(16)
                 .map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
         )
+        self.serves = PeerFilter(wire: txtRecord[Key.serves])
+    }
+
+    /// Whether this device serves a peer of `peerClass`. A device that does
+    /// not is not shown, offered, paired with or asked. See PROTOCOL.md 1.4.
+    public func serves(_ peerClass: DeviceClass? = DeviceClass.this, sameHost: Bool = false) -> Bool {
+        serves?.admits(peerClass, sameHost: sameHost) ?? true
     }
 
     public func has(_ capability: Capability) -> Bool {
@@ -179,8 +192,9 @@ public struct PeerAdvertisement: Equatable, Sendable {
     /// one check every client makes before it does, so no
     /// platform keeps a list of its own. Never itself, and only a device
     /// that `servesAsLegacyHost`.
-    public func mayBeLegacyHost(of ourDeviceID: String) -> Bool {
-        deviceID != ourDeviceID && servesAsLegacyHost
+    public func mayBeLegacyHost(of ourDeviceID: String, as ourClass: DeviceClass? = DeviceClass.this,
+                                sameHost: Bool = false) -> Bool {
+        deviceID != ourDeviceID && servesAsLegacyHost && serves(ourClass, sameHost: sameHost)
     }
 
     /// Whether the device `ourDeviceID` may send this one searches, links
@@ -191,8 +205,10 @@ public struct PeerAdvertisement: Equatable, Sendable {
     ///
     /// Only for whom to ask. Mirroring a whole library stays with
     /// `mayBeLegacyHost(of:)`, desktops alone.
-    public func mayAcquire(for ourDeviceID: String) -> Bool {
+    public func mayAcquire(for ourDeviceID: String, as ourClass: DeviceClass? = DeviceClass.this,
+                           sameHost: Bool = false) -> Bool {
         deviceID != ourDeviceID && isCompatible && speaksOpenProtocol && has(.acquire)
+            && serves(ourClass, sameHost: sameHost)
     }
 }
 

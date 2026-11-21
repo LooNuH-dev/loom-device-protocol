@@ -55,6 +55,10 @@ public enum Handover {
                 reason: message.payload?["reason"]?.stringValue
             )
             if self.fileID == nil, message.ok != false { return nil }
+            // A file the requester cannot check is not offered (PROTOCOL.md 7.5).
+            if self.fileID != nil {
+                guard let bytes, bytes >= 0, sha256?.count == 32 else { return nil }
+            }
         }
 
         public func message(id: String = UUID().uuidString) -> WireMessage {

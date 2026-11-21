@@ -72,6 +72,19 @@ not roles: a device without one may ask a device that has it.
 
 Other names may appear; they are skipped.
 
+### 1.4 Which peers a device serves
+
+A device may limit which peers it serves, with `serves` in its TXT record (2)
+and its `hello` (3.3). The value is device classes separated by `,` (`*` for
+any), optionally followed by `;local`, which limits it to peers on the same
+physical device: `ios`, `ios,android`, `*;local`, `ios;local`. Absent or
+empty: it serves every peer, as before. Unknown class names are skipped.
+
+A peer outside the filter does not show the device, offer it as a place to
+play, ask it to search or acquire, or pair with it. The device itself
+refuses requests, including pairing, from a peer outside its filter and may
+close the connection after that peer's `hello`.
+
 ---
 
 ## 2. Discovery
@@ -93,6 +106,7 @@ TXT record (each value at most 200 bytes):
 | `class` | string | `desktop`, `android` or `ios`; decides who shows the pairing code (5.1). An unknown value is read as `desktop` |
 | `versions` | list | Protocol majors, comma-separated: `1` |
 | `caps` | list | Capabilities, comma-separated: `acquire,serveData` |
+| `serves` | string | Optional. Which peers it serves (1.4): `ios;local` |
 | `tracks`, `rev`, `playing` | — | Used by Loom's own apps; other devices may omit them and should ignore them |
 
 A record without `proto`, `device` or a non-empty `deviceid`, or with a value
@@ -161,6 +175,7 @@ The first message each side sends on every connection.
 | `versions` | yes | Protocol majors, array of integers |
 | `features` | yes | Feature tokens (1.2), array of strings |
 | `caps` | yes | Capabilities (1.3), array of strings; may be empty |
+| `serves` | no | Which peers it serves (1.4), as in the TXT record |
 | `dataPort` | no | Port of the data channel (6); absent or `0`: none now |
 | `nonce` | yes | 16 fresh random bytes, base64, new on every connection |
 
@@ -416,7 +431,9 @@ library listing:
    ```
 
    `fileId` is 1–128 characters of `[A-Za-z0-9._-]`, not `.` or `..`. On
-   failure: `ok: false`, no `fileId`, and `reason`.
+   success `bytes` and `sha256` are required; a requester ignores a
+   `fetchReady` without them. On failure: `ok: false`, no `fileId`, and
+   `reason`.
 3. **Hand over.** The requester reads `GET /api/variant/{fileId}` (6.1),
    resuming with `Range` as needed, and checks `bytes` and `sha256`.
 4. **Confirm.** The requester sends `fetchDone` with `fetchId` and `fileId`:

@@ -18,7 +18,7 @@ import Foundation
 public enum DeviceProtocol {
     /// This package's semantic version. Kept equal to the newest entry in
     /// CHANGELOG.md.
-    public static let libraryVersion = "1.1.0"
+    public static let libraryVersion = "1.2.0"
 
     /// Version 1 is published as a draft: it may still change before it is
     /// declared stable, and the specification says so.

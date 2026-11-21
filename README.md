@@ -4,7 +4,7 @@ The reference library for the Loom Device Protocol: what a device needs to be
 found by Loom's apps, pair with them, prove itself, and ask a paired device to
 search, read a link or provide track files.
 
-**Version 1.1.0, draft.** Version 1 may change before it is declared stable.
+**Version 1.2.0, draft.** Version 1 may change before it is declared stable.
 The specification is [PROTOCOL.md](PROTOCOL.md); changes are in
 [CHANGELOG.md](CHANGELOG.md). Licence: Apache-2.0 ([LICENSE](LICENSE)).
 
@@ -58,7 +58,8 @@ contract. In order, a device:
 
 1. **Is found** (PROTOCOL.md 2): advertises `_loom._tcp` with the TXT keys,
    including `versions` and `caps` (`acquire` if it searches and fetches;
-   `noPlayback` if it plays nothing).
+   `noPlayback` if it plays nothing), and `serves` if it serves only some
+   peers (1.4).
 2. **Talks** (3): length-prefixed JSON over TLS, `hello` first, then `auth`
    once paired. Unknown kinds and feature tokens are ignored.
 3. **Pairs** (5): the typed-code exchange, version 2; keeps the peer's
