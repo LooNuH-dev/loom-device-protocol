@@ -65,6 +65,8 @@ contract. In order, a device:
 3. **Pairs** (5): the typed-code exchange, version 2; keeps the peer's
    certificate fingerprint and the shared secret.
 4. **Serves or reads files** (6): signed HTTP requests on the data channel.
+   If it declares `serveData` and keeps no library, it answers
+   `GET /api/catalog` with the empty catalog (6.4).
 5. **Searches, reads links and fetches** (7), and hands fetched files over
    by `fetchReady` → `GET /api/variant/{fileId}` → `fetchDone` (7.5).
 

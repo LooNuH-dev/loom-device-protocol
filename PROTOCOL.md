@@ -8,10 +8,11 @@ other, and how one device asks another to search, read a link and provide
 track files. It describes the wire only. Anything not written here is not part
 of the protocol, including names of types in any implementation.
 
-Loom's own apps speak more than this to each other (playback, their libraries,
-their lists). Those messages are not part of this protocol. A device that
-implements only this protocol never needs them, and ignores them if it
-receives them (1.3).
+Loom's own apps speak more than this to each other (playback, library syncing,
+their lists). Those messages, and the library records themselves, are not part
+of this protocol; of the library, only the envelope of the catalog answer is
+described here (6.4). A device that implements only this protocol never needs
+the rest, and ignores such messages if it receives them (1.3).
 
 Words: a **device** is anything that speaks this protocol. The **initiator** of
 a connection is the device that opened it; the **responder** accepted it and
@@ -245,10 +246,13 @@ Every other `type` is outside this protocol and is ignored.
 identity. It is meant for one person's own devices. Shared listening, and the
 content of this message, are outside this protocol.
 
-- Loom's apps currently send it after `auth` (3.4) to any paired device.
-- A device implementing this protocol need not reply, and should not. The
-  absence of a reply changes nothing.
-- It MUST ignore the message, and MUST NOT store, log or forward it.
+- A sender in Loom's apps currently sends it to any paired device once it has
+  sent its own `auth` (3.4), without waiting for the other side's, and may
+  send it again.
+- Loom's own devices keep what it carries and answer each other.
+- A device that implements only this protocol MUST NOT send this kind, neither
+  as a reply nor on its own; it MUST ignore it, and MUST NOT store, log or
+  forward it. The absence of a reply changes nothing.
 
 ---
 
@@ -337,7 +341,7 @@ open between requests.
 | `GET` | `/api/catalog` | The device's library, or what changed in it (6.4). A device that declares `serveData` SHOULD answer it |
 | `POST` | `/api/import` | Send a track file to the device. Body streamed; `Content-Length` required, at most 2 GiB; headers `X-Loom-Filename` (a hint; only its last component is used) and `X-Loom-Content-SHA256` (signed digest of the body). Answer `200` once the file is taken in, `415` if it is not audio, `503` when the device cannot take files now |
 
-Other paths on the same port belong to Loom's own apps and are outside this
+Other methods and paths on the same port belong to Loom's own apps and are outside this
 protocol; they are signed the same way (6.2).
 
 Limits a device applies: a request head of at most 64 KiB; a buffered body of
