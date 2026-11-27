@@ -4,7 +4,7 @@ The reference library for the Loom Device Protocol: what a device needs to be
 found by Loom's apps, pair with them, prove itself, and ask a paired device to
 search, read a link or provide track files.
 
-**Version 1.2.0, draft.** Version 1 may change before it is declared stable.
+**Version 1.3.0, draft.** Version 1 may change before it is declared stable.
 The specification is [PROTOCOL.md](PROTOCOL.md); changes are in
 [CHANGELOG.md](CHANGELOG.md). Licence: Apache-2.0 ([LICENSE](LICENSE)).
 

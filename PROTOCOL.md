@@ -1,6 +1,6 @@
 # Loom Device Protocol
 
-**Version 1.1.0 — draft. Licence of the reference library: Apache-2.0. Version 1 may change before it is declared stable.**
+**Version 1.3.0 — draft. Licence of the reference library: Apache-2.0. Version 1 may change before it is declared stable.**
 
 This document describes what a device needs to take part in a Loom network:
 how it is found, how it pairs, how two paired devices prove themselves to each
@@ -67,7 +67,7 @@ not roles: a device without one may ask a device that has it.
 | Name | Meaning |
 |---|---|
 | `acquire` | The device answers a search, reads links, and provides the track files it fetches for them (7). |
-| `serveData` | The device's data channel (6) is up now. |
+| `serveData` | The device's data channel (6) is up now. A device that says so SHOULD answer `GET /api/catalog` (6.4). |
 | `noPlayback` | The device plays nothing and takes no transport control. Others must not offer it as a place to play, steer its playback, or add it to a shared listening session. A device that does not say it is taken to play, as before. |
 
 Other names may appear; they are skipped.
@@ -235,8 +235,20 @@ hold more than 256 messages or 8 MiB, or if no proof arrives within 30 s
 | `auth` | 3.4 |
 | `pairingOffer`, `pairingCommit`, `pairingReveal`, `pairingCheck`, `pairingConfirm` | 5 |
 | `serviceSearch`, `serviceFetch`, `linkLookup`, `linkAction`, `fetchReady`, `fetchDone` | 7 |
+| `twinePerson` | 4.1 |
 
 Every other `type` is outside this protocol and is ignored.
+
+### 4.1 `twinePerson`
+
+`twinePerson` carries secret material of the sender's shared-listening
+identity. It is meant for one person's own devices. Shared listening, and the
+content of this message, are outside this protocol.
+
+- Loom's apps currently send it after `auth` (3.4) to any paired device.
+- A device implementing this protocol need not reply, and should not. The
+  absence of a reply changes nothing.
+- It MUST ignore the message, and MUST NOT store, log or forward it.
 
 ---
 
@@ -322,6 +334,7 @@ open between requests.
 | Method | Path | Meaning |
 |---|---|---|
 | `GET` | `/api/variant/{id}` | A track file. Single byte ranges: `bytes=a-b`, `bytes=a-`, `bytes=-n` |
+| `GET` | `/api/catalog` | The device's library, or what changed in it (6.4). A device that declares `serveData` SHOULD answer it |
 | `POST` | `/api/import` | Send a track file to the device. Body streamed; `Content-Length` required, at most 2 GiB; headers `X-Loom-Filename` (a hint; only its last component is used) and `X-Loom-Content-SHA256` (signed digest of the body). Answer `200` once the file is taken in, `415` if it is not audio, `503` when the device cannot take files now |
 
 Other paths on the same port belong to Loom's own apps and are outside this
@@ -366,6 +379,50 @@ An unsigned or wrongly signed request answers `401`.
 - The TLS server learns who the client is from `auth` (3.4) and from request
   signatures (6.2); no client certificates are used.
 - There is no fallback to an unencrypted connection.
+
+### 6.4 `GET /api/catalog`
+
+Optional query `since`: a `revision` the client was given earlier.
+
+Answer `200`, `Content-Type: application/json`:
+
+| Field | Required | Type | Meaning |
+|---|---|---|---|
+| `revision` | yes | integer ≥ 0 | The device's current highest revision. Ask again with it to get what changed since |
+| `isComplete` | yes | boolean | `true` only when `since` is absent, `0` or not a number; any `since` above `0` gives `false` |
+| `tracks` | yes | list | Track records |
+| `variants` | yes | list | File records |
+| `wishlist` | no | list | Absent is empty |
+| `merged` | no | list | Absent is empty |
+
+A client ignores other keys.
+
+The records in these lists are the shapes Loom's apps keep their libraries
+in. They are outside this protocol, and one record a client cannot read makes
+it reject the whole answer. A device that is not one of Loom's apps therefore
+sends empty lists.
+
+**Empty catalog.** A device that keeps no library answers:
+
+```json
+{"isComplete":true,"merged":[],"revision":0,"tracks":[],"variants":[],"wishlist":[]}
+```
+
+Its `revision` stays `0`, so it is asked with `since` absent or `0`.
+
+**Who is asked, and what a failure means.**
+
+- A client asks a device whose `hello` names a `dataPort` and declares
+  `serveData`. Some clients go by the port alone, so a device with no data
+  channel MUST NOT name one (`dataPort` absent or `0`, 3.3).
+- A device that declares `serveData` SHOULD answer this route, whether or not
+  it declares `noPlayback`.
+- A failed answer (an error status, an unreadable body, no answer) does not
+  make the client close the control connection: the device stays connected
+  once `auth` (3.4) holds. A client MAY ask again (some retry with growing
+  pauses, others only at the next change announcement or connection); a
+  device must not count on a retry. Change announcements are outside this
+  protocol.
 
 ---
 

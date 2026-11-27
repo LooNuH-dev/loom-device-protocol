@@ -3,6 +3,21 @@
 This package and PROTOCOL.md follow [Semantic Versioning](https://semver.org).
 The major version is the protocol major that devices announce in `versions`.
 
+## 1.3.0 — 2026-11-27 (draft, may change)
+
+Documents behaviour devices already have; nothing on the wire changes, so a
+1.2.0 device is a 1.3.0 device. Minor, not patch: a route and a message kind
+join the protocol.
+
+- `GET /api/catalog` is part of the protocol (PROTOCOL.md 6.4): the answer's
+  fields and the empty catalog. A device that declares `serveData` SHOULD
+  answer it; a device that keeps no library answers the empty catalog. A
+  failed answer does not close the connection or undo `auth`.
+- `twinePerson` is named (PROTOCOL.md 4.1). It carries secret material of the
+  sender's shared-listening identity; its content is outside this protocol. A
+  receiving device MUST ignore it and MUST NOT store, log or forward it.
+- PROTOCOL.md's heading named 1.1.0; it now names its version.
+
 ## 1.2.0 — 2026-11-22 (draft, may change)
 
 - A device may limit which peers it serves (PROTOCOL.md 1.4): `serves` in
