@@ -14,9 +14,10 @@ a route and a message kind join the protocol.
   answer it; a device that keeps no library answers the empty catalog. A
   failed answer does not close the connection or undo `auth`.
 - `twinePerson` is named (PROTOCOL.md 4.1). It carries secret material of the
-  sender's shared-listening identity; its content is outside this protocol. A
-  device that implements only this protocol MUST NOT send it, MUST ignore it,
-  and MUST NOT store, log or forward it.
+  sender's shared-listening identity; its content is outside this protocol.
+  Loom's apps send it only to paired devices their person marked as their
+  own. A device that implements only this protocol MUST NOT send it, MUST
+  ignore it, and MUST NOT store, log or forward it.
 - PROTOCOL.md's heading named 1.1.0; it now names its version.
 
 ## 1.2.0 — 2026-11-22 (draft, may change)

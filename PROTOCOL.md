@@ -246,10 +246,10 @@ Every other `type` is outside this protocol and is ignored.
 identity. It is meant for one person's own devices. Shared listening, and the
 content of this message, are outside this protocol.
 
-- A sender in Loom's apps currently sends it to any paired device once it has
-  sent its own `auth` (3.4), without waiting for the other side's, and may
-  send it again.
-- Loom's own devices keep what it carries and answer each other.
+- Loom's apps send it only to a paired device that their person has marked as
+  their own, after that device's `auth` (3.4) has held, and may send it again.
+- Loom's own devices keep what it carries only from a device so marked, and
+  answer each other.
 - A device that implements only this protocol MUST NOT send this kind, neither
   as a reply nor on its own; it MUST ignore it, and MUST NOT store, log or
   forward it. The absence of a reply changes nothing.
