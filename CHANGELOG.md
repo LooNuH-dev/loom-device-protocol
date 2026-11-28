@@ -3,7 +3,7 @@
 This package and PROTOCOL.md follow [Semantic Versioning](https://semver.org).
 The major version is the protocol major that devices announce in `versions`.
 
-## 1.3.0 — 2026-11-27 (draft, may change)
+## 1.3.0 — 2026-11-28
 
 Documents behaviour Loom's devices already have. No message or field changes
 on the wire; the version adds requirements on implementers. Minor, not patch:
